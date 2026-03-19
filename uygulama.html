@@ -403,7 +403,7 @@
     }
 
     function saveCharge() {
-      const { start, end, diff, kwh } = calcResult();
+      const { start, end, diff, kwh, tl, price } = calcResult();
       if (diff <= 0) { showToast('Bitiş yüzdesi başlangıçtan büyük olmalı!','error'); return; }
       const dateVal = document.getElementById('chargeDate').value;
       if (!dateVal) { showToast('Lütfen tarih seçin.','error'); return; }
