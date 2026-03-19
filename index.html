@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="EX30 Şarj" />
+  <meta name="theme-color" content="#003057" />
+  <title>Volvo EX30 Şarj Takip</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <div class="car-icon">⚡</div>
+        <div>
+          <h1 class="header-title">Volvo EX30</h1>
+          <p class="header-sub">Şarj Takip</p>
+        </div>
+        <div class="battery-cap">
+          <span class="cap-label">Batarya</span>
+          <span class="cap-value">69 kWh</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tab bar -->
+    <nav class="tab-bar">
+      <button class="tab active" data-tab="charge" onclick="switchTab('charge')">
+        <span class="tab-icon">⚡</span>
+        <span>Şarj Et</span>
+      </button>
+      <button class="tab" data-tab="history" onclick="switchTab('history')">
+        <span class="tab-icon">📋</span>
+        <span>Geçmiş</span>
+      </button>
+      <button class="tab" data-tab="stats" onclick="switchTab('stats')">
+        <span class="tab-icon">📊</span>
+        <span>İstatistik</span>
+      </button>
+    </nav>
+
+    <!-- ═══════════════ ŞARJ ET TAB ═══════════════ -->
+    <section id="tab-charge" class="tab-content active">
+
+      <div class="card">
+        <h2 class="card-title">Yeni Şarj Seansı</h2>
+
+        <div class="date-row">
+          <label class="field-label">Tarih & Saat</label>
+          <input type="datetime-local" id="chargeDate" class="input-date" />
+        </div>
+
+        <div class="percent-row">
+          <div class="percent-block">
+            <label class="field-label">Başlangıç %</label>
+            <div class="percent-input-wrap">
+              <button class="step-btn" onclick="stepPercent('start', -1)">−</button>
+              <input type="number" id="startPercent" class="percent-input"
+                     min="0" max="100" value="20" inputmode="numeric" />
+              <button class="step-btn" onclick="stepPercent('start', 1)">+</button>
+            </div>
+            <input type="range" id="startRange" class="slider" min="0" max="100" value="20"
+                   oninput="syncRange('start', this.value)" />
+          </div>
+
+          <div class="arrow">→</div>
+
+          <div class="percent-block">
+            <label class="field-label">Bitiş %</label>
+            <div class="percent-input-wrap">
+              <button class="step-btn" onclick="stepPercent('end', -1)">−</button>
+              <input type="number" id="endPercent" class="percent-input"
+                     min="0" max="100" value="80" inputmode="numeric" />
+              <button class="step-btn" onclick="stepPercent('end', 1)">+</button>
+            </div>
+            <input type="range" id="endRange" class="slider" min="0" max="100" value="80"
+                   oninput="syncRange('end', this.value)" />
+          </div>
+        </div>
+
+        <!-- Sonuç kutusu -->
+        <div class="result-box" id="resultBox">
+          <div class="result-main">
+            <span id="resultKwh" class="result-kwh">41.4</span>
+            <span class="result-unit">kWh</span>
+          </div>
+          <div class="result-detail">
+            <span id="resultDiff" class="result-diff">%20 → %80 (+60%)</span>
+          </div>
+        </div>
+
+        <div class="note-row">
+          <label class="field-label">Not (isteğe bağlı)</label>
+          <input type="text" id="chargeNote" class="input-text"
+                 placeholder="ör. Akşam şarj, uzun yolculuk öncesi…" />
+        </div>
+
+        <button class="btn-primary" onclick="saveCharge()">Kaydet</button>
+      </div>
+
+    </section>
+
+    <!-- ═══════════════ GEÇMİŞ TAB ═══════════════ -->
+    <section id="tab-history" class="tab-content">
+      <div class="list-header">
+        <h2 class="list-title">Şarj Geçmişi</h2>
+        <button class="btn-clear" onclick="confirmClear()">Tümünü Sil</button>
+      </div>
+      <div id="historyList" class="history-list"></div>
+      <p id="emptyMsg" class="empty-msg">Henüz şarj kaydı yok.</p>
+    </section>
+
+    <!-- ═══════════════ İSTATİSTİK TAB ═══════════════ -->
+    <section id="tab-stats" class="tab-content">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-icon">⚡</span>
+          <span class="stat-value" id="statTotal">0 kWh</span>
+          <span class="stat-label">Toplam Şarj</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🔋</span>
+          <span class="stat-value" id="statAvg">0 kWh</span>
+          <span class="stat-label">Ortalama Seans</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">📅</span>
+          <span class="stat-value" id="statCount">0</span>
+          <span class="stat-label">Toplam Seans</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🏆</span>
+          <span class="stat-value" id="statMax">0 kWh</span>
+          <span class="stat-label">En Yüksek Seans</span>
+        </div>
+      </div>
+
+      <div class="card" id="monthCard">
+        <h2 class="card-title">Bu Ay</h2>
+        <div class="month-stats">
+          <div class="month-item">
+            <span class="month-label">Şarj Edilen</span>
+            <span class="month-value" id="statMonthKwh">0 kWh</span>
+          </div>
+          <div class="month-item">
+            <span class="month-label">Seans Sayısı</span>
+            <span class="month-value" id="statMonthCount">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Tahmini Bilgi</h2>
+        <p class="info-text">
+          Volvo EX30 bataryası <strong>69 kWh</strong> (net kullanılabilir ~64 kWh).
+          WLTP menzili yaklaşık <strong>480 km</strong>'dir.
+        </p>
+        <p class="info-text">
+          Ortalama tüketim ~<strong>14–16 kWh/100km</strong>dir.
+        </p>
+        <div class="range-estimate" id="rangeEstimate"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Toast bildirimi -->
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
