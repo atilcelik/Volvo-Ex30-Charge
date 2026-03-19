@@ -151,6 +151,7 @@
     .history-main { display: flex; align-items: baseline; justify-content: space-between; }
     .history-kwh { font-size: 1.4rem; font-weight: 800; color: var(--volvo-blue); }
     .history-percent { font-size: .85rem; color: var(--muted); font-weight: 500; }
+    .history-tl { font-size: .85rem; color: var(--accent2); font-weight: 700; margin-top: 2px; }
     .history-note { font-size: .78rem; color: var(--muted); margin-top: 4px; font-style: italic; }
     .empty-msg { text-align: center; color: var(--muted); padding: 48px 0; font-size: .95rem; }
 
@@ -252,9 +253,17 @@
             <span id="resultKwh" class="result-kwh">41.4</span>
             <span class="result-unit">kWh</span>
           </div>
+          <div class="result-main" style="margin-top:6px;">
+            <span id="resultTl" style="font-size:1.6rem;font-weight:800;color:#7ecfff;">162,3</span>
+            <span class="result-unit">TL</span>
+          </div>
           <div class="result-detail">
             <span id="resultDiff" class="result-diff">%20 → %80 (+60%)</span>
           </div>
+        </div>
+        <div class="note-row">
+          <label class="field-label">Elektrik Fiyatı (TL/kWh)</label>
+          <input type="number" id="pricePerKwh" class="input-text" value="3.92" step="0.01" min="0" inputmode="decimal" style="margin-bottom:16px;" oninput="calcResult()" />
         </div>
         <div class="note-row">
           <label class="field-label">Not (isteğe bağlı)</label>
@@ -283,9 +292,9 @@
           <span class="stat-label">Toplam Şarj</span>
         </div>
         <div class="stat-card">
-          <span class="stat-icon">🔋</span>
-          <span class="stat-value" id="statAvg">0 kWh</span>
-          <span class="stat-label">Ortalama Seans</span>
+          <span class="stat-icon">💰</span>
+          <span class="stat-value" id="statTotalTl">0 TL</span>
+          <span class="stat-label">Toplam Maliyet</span>
         </div>
         <div class="stat-card">
           <span class="stat-icon">📅</span>
@@ -306,7 +315,11 @@
             <span class="month-value" id="statMonthKwh">0 kWh</span>
           </div>
           <div class="month-item">
-            <span class="month-label">Seans Sayısı</span>
+            <span class="month-label">Maliyet</span>
+            <span class="month-value" id="statMonthTl">0 TL</span>
+          </div>
+          <div class="month-item">
+            <span class="month-label">Seans</span>
             <span class="month-value" id="statMonthCount">0</span>
           </div>
         </div>
@@ -325,6 +338,7 @@
   <script>
     const BATTERY_KWH = 69;
     const STORAGE_KEY = 'ex30_charges';
+    const DEFAULT_PRICE = 3.92;
 
     document.addEventListener('DOMContentLoaded', () => {
       initDate();
@@ -377,12 +391,15 @@
     function calcResult() {
       const start = parseInt(document.getElementById('startPercent').value) || 0;
       const end   = parseInt(document.getElementById('endPercent').value) || 0;
+      const price = parseFloat(document.getElementById('pricePerKwh').value) || DEFAULT_PRICE;
       const diff  = end - start;
       const kwh   = (BATTERY_KWH * Math.max(0, diff) / 100).toFixed(1);
+      const tl    = (parseFloat(kwh) * price).toFixed(2);
       document.getElementById('resultKwh').textContent = kwh;
+      document.getElementById('resultTl').textContent = Number(tl).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2});
       document.getElementById('resultDiff').textContent = `%${start} → %${end} (+${Math.max(0,diff)}%)`;
       document.getElementById('resultBox').classList.toggle('result-negative', diff < 0);
-      return { start, end, diff, kwh: parseFloat(kwh) };
+      return { start, end, diff, kwh: parseFloat(kwh), tl: parseFloat(tl), price };
     }
 
     function saveCharge() {
@@ -391,13 +408,13 @@
       const dateVal = document.getElementById('chargeDate').value;
       if (!dateVal) { showToast('Lütfen tarih seçin.','error'); return; }
       const record = {
-        id: Date.now(), date: dateVal, start, end, diff, kwh,
+        id: Date.now(), date: dateVal, start, end, diff, kwh, tl, price,
         note: document.getElementById('chargeNote').value.trim()
       };
       const charges = loadCharges();
       charges.unshift(record);
       saveCharges(charges);
-      showToast(`${kwh} kWh kaydedildi!`,'success');
+      showToast(`${kwh} kWh · ${Number(tl).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} TL kaydedildi!`,'success');
       document.getElementById('chargeNote').value = '';
       initDate();
     }
@@ -418,6 +435,7 @@
             <span class="history-kwh">${c.kwh} kWh</span>
             <span class="history-percent">%${c.start} → %${c.end}</span>
           </div>
+          <div class="history-tl">${c.tl ? Number(c.tl).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' TL' : ''}</div>
           ${c.note ? `<p class="history-note">${escapeHtml(c.note)}</p>` : ''}
         </div>
       `).join('');
@@ -441,13 +459,14 @@
     function renderStats() {
       const charges = loadCharges();
       if (charges.length === 0) {
-        ['statTotal','statAvg','statMax','statMonthKwh'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent='0 kWh'; });
+        ['statTotal','statMax','statMonthKwh'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent='0 kWh'; });
+        ['statTotalTl','statMonthTl'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent='0,00 TL'; });
         ['statCount','statMonthCount'].forEach(id => { const e = document.getElementById(id); if(e) e.textContent='0'; });
         document.getElementById('rangeEstimate').innerHTML = '';
         return;
       }
       const totalKwh = charges.reduce((s,c) => s + c.kwh, 0);
-      const avgKwh = totalKwh / charges.length;
+      const totalTl = charges.reduce((s,c) => s + (c.tl || c.kwh * DEFAULT_PRICE), 0);
       const maxKwh = Math.max(...charges.map(c => c.kwh));
       const now = new Date();
       const thisMonth = charges.filter(c => {
@@ -455,11 +474,13 @@
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       });
       const monthKwh = thisMonth.reduce((s,c) => s + c.kwh, 0);
+      const monthTl = thisMonth.reduce((s,c) => s + (c.tl || c.kwh * DEFAULT_PRICE), 0);
       document.getElementById('statTotal').textContent = totalKwh.toFixed(1) + ' kWh';
-      document.getElementById('statAvg').textContent = avgKwh.toFixed(1) + ' kWh';
+      document.getElementById('statTotalTl').textContent = totalTl.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' TL';
       document.getElementById('statCount').textContent = charges.length;
       document.getElementById('statMax').textContent = maxKwh.toFixed(1) + ' kWh';
       document.getElementById('statMonthKwh').textContent = monthKwh.toFixed(1) + ' kWh';
+      document.getElementById('statMonthTl').textContent = monthTl.toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' TL';
       document.getElementById('statMonthCount').textContent = thisMonth.length;
       const estimatedKm = (totalKwh / 15 * 100).toFixed(0);
       document.getElementById('rangeEstimate').innerHTML = `
