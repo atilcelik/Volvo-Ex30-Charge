@@ -3,6 +3,7 @@
 // ──────────────────────────────────────────────
 
 const BATTERY_KWH   = 69;          // Toplam batarya kapasitesi
+const DEFAULT_PRICE = 3.92;        // Varsayılan elektrik fiyatı (TL/kWh)
 const STORAGE_KEY   = 'ex30_charges';
 const GIST_TOKEN_KEY = 'ex30_gist_token';
 const GIST_ID_KEY    = 'ex30_gist_id';
@@ -80,21 +81,25 @@ function stepPercent(side, delta) {
 function calcResult() {
   const start = parseInt(document.getElementById('startPercent').value) || 0;
   const end   = parseInt(document.getElementById('endPercent').value) || 0;
+  const price = parseFloat(document.getElementById('pricePerKwh').value) || DEFAULT_PRICE;
   const diff  = end - start;
   const kwh   = (BATTERY_KWH * Math.max(0, diff) / 100).toFixed(1);
+  const tl    = (parseFloat(kwh) * price).toFixed(2);
 
   document.getElementById('resultKwh').textContent = kwh;
+  document.getElementById('resultTl').textContent  =
+    Number(tl).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('resultDiff').textContent =
     `%${start} → %${end} (+${Math.max(0, diff)}%)`;
 
   const box = document.getElementById('resultBox');
   box.classList.toggle('result-negative', diff < 0);
-  return { start, end, diff, kwh: parseFloat(kwh) };
+  return { start, end, diff, kwh: parseFloat(kwh), tl: parseFloat(tl), price };
 }
 
 // ── Kaydet ─────────────────────────────────────
 function saveCharge() {
-  const { start, end, diff, kwh } = calcResult();
+  const { start, end, diff, kwh, tl, price } = calcResult();
 
   if (diff <= 0) {
     showToast('Bitiş yüzdesi başlangıçtan büyük olmalı!', 'error');
@@ -117,6 +122,8 @@ function saveCharge() {
     end,
     diff,
     kwh,
+    tl,
+    price,
     odometer,
     note: document.getElementById('chargeNote').value.trim()
   };
@@ -128,7 +135,8 @@ function saveCharge() {
   // Driven km = current odometer - previous odometer (if both exist)
   const driven = calcDrivenKm(charges, 0);
   const effStr = driven ? `  ·  ${(kwh / driven * 100).toFixed(1)} kWh/100km` : '';
-  showToast(`${kwh} kWh kaydedildi!${effStr}`, 'success');
+  const tlStr  = `  ·  ${Number(tl).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} TL`;
+  showToast(`${kwh} kWh${tlStr}${effStr} kaydedildi!`, 'success');
   document.getElementById('chargeNote').value     = '';
   document.getElementById('chargeOdometer').value = '';
   initDate();
@@ -167,6 +175,7 @@ function renderHistory() {
         <span class="history-kwh">${c.kwh} kWh</span>
         <span class="history-percent">%${c.start} → %${c.end}</span>
       </div>
+      ${c.tl ? `<div class="history-tl">${Number(c.tl).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} TL</div>` : ''}
       ${effRow}
       ${c.note ? `<p class="history-note">${escapeHtml(c.note)}</p>` : ''}
     </div>`;

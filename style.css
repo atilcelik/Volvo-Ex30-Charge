@@ -323,6 +323,13 @@ body {
   font-weight: 500;
 }
 
+.history-tl {
+  font-size: .85rem;
+  color: var(--accent2);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
 .history-note {
   font-size: .78rem;
   color: var(--muted);
