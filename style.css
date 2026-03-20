@@ -410,3 +410,109 @@ body {
 
 /* ── Safe area bottom padding for tab content ─── */
 .tab-content { padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px); }
+
+/* ── Km row ───────────────────────────────────── */
+.km-row { margin-bottom: 16px; }
+
+/* ── History efficiency row ───────────────────── */
+.history-efficiency {
+  font-size: .8rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-top: 5px;
+}
+
+/* ── Efficiency card ──────────────────────────── */
+.efficiency-main {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.efficiency-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.efficiency-unit {
+  font-size: .9rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.efficiency-sub {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* ── Sync tab ─────────────────────────────────── */
+.field-row { margin-bottom: 16px; }
+
+.field-optional {
+  font-size: .65rem;
+  font-weight: 400;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sync-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.btn-sync-push,
+.btn-sync-pull {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+
+.btn-sync-push {
+  background: linear-gradient(135deg, var(--accent), #0077cc);
+  color: #fff;
+}
+
+.btn-sync-pull {
+  background: linear-gradient(135deg, var(--accent2), #1a8a4a);
+  color: #fff;
+}
+
+.btn-sync-push:active,
+.btn-sync-pull:active { opacity: .8; }
+
+.sync-status {
+  font-size: .82rem;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  min-height: 0;
+  transition: all .2s;
+}
+
+.sync-status:empty { display: none; }
+
+.sync-status-success {
+  background: #eafaf1;
+  color: #1a7a4a;
+  border-left: 3px solid var(--accent2);
+}
+
+.sync-status-error {
+  background: #fef0f0;
+  color: var(--danger);
+  border-left: 3px solid var(--danger);
+}
+
+.sync-status-pending {
+  background: #eaf6ff;
+  color: #0077cc;
+  border-left: 3px solid var(--accent);
+}

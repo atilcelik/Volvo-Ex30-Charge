@@ -44,6 +44,10 @@
         <span class="tab-icon">📊</span>
         <span>İstatistik</span>
       </button>
+      <button class="tab" data-tab="sync" onclick="switchTab('sync')">
+        <span class="tab-icon">☁️</span>
+        <span>Sync</span>
+      </button>
     </nav>
 
     <!-- ═══════════════ ŞARJ ET TAB ═══════════════ -->
@@ -102,6 +106,12 @@
                  placeholder="ör. Akşam şarj, uzun yolculuk öncesi…" />
         </div>
 
+        <div class="km-row">
+          <label class="field-label">Gidilen Km (isteğe bağlı)</label>
+          <input type="number" id="chargeKm" class="input-text"
+                 placeholder="ör. 350  —  bu şarjla kaç km gittin?" inputmode="decimal" min="0" step="0.1" />
+        </div>
+
         <button class="btn-primary" onclick="saveCharge()">Kaydet</button>
       </div>
 
@@ -142,6 +152,15 @@
         </div>
       </div>
 
+      <div class="card" id="efficiencyCard" style="display:none">
+        <h2 class="card-title">Verimlilik</h2>
+        <div class="efficiency-main">
+          <span class="efficiency-value" id="statEfficiency">—</span>
+          <span class="efficiency-unit">kWh/100km</span>
+        </div>
+        <p class="efficiency-sub" id="statEfficiencySub"></p>
+      </div>
+
       <div class="card" id="monthCard">
         <h2 class="card-title">Bu Ay</h2>
         <div class="month-stats">
@@ -167,6 +186,45 @@
         </p>
         <div class="range-estimate" id="rangeEstimate"></div>
       </div>
+    </section>
+
+    <!-- ═══════════════ SYNC TAB ═══════════════ -->
+    <section id="tab-sync" class="tab-content">
+
+      <div class="card">
+        <h2 class="card-title">GitHub Gist Sync</h2>
+        <p class="info-text">Verilerinizi özel bir GitHub Gist'te saklayın. Bilgisayar, tablet veya telefondan erişin.</p>
+
+        <div class="field-row">
+          <label class="field-label">GitHub Token (PAT)</label>
+          <input type="password" id="gistToken" class="input-text"
+                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                 oninput="saveGistSettings()" />
+        </div>
+
+        <div class="field-row">
+          <label class="field-label">Gist ID <span class="field-optional">(ilk yüklemeden sonra otomatik dolar)</span></label>
+          <input type="text" id="gistId" class="input-text"
+                 placeholder="—"
+                 oninput="saveGistSettings()" />
+        </div>
+
+        <div class="sync-buttons">
+          <button class="btn-sync-push" onclick="pushToGist()">⬆ Yükle (Push)</button>
+          <button class="btn-sync-pull" onclick="pullFromGist()">⬇ İndir (Pull)</button>
+        </div>
+
+        <div id="syncStatus" class="sync-status"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Nasıl Kullanılır?</h2>
+        <p class="info-text"><strong>1.</strong> <a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank" rel="noopener">github.com → Settings → Tokens</a> adresinden "gist" yetkili bir PAT oluşturun.</p>
+        <p class="info-text"><strong>2.</strong> Token'ı yukarıya yapıştırın ve <strong>Yükle</strong>'ye basın. İlk seferde otomatik Gist oluşturulur, ID kaydedilir.</p>
+        <p class="info-text"><strong>3.</strong> Başka bir cihazda aynı token'ı girin, Gist ID'yi de ekleyin ve <strong>İndir</strong>'e basın.</p>
+        <p class="info-text" style="color:#e74c3c"><strong>Not:</strong> Token bu cihazda localStorage'da saklanır. Kişisel cihazınızda kullanın.</p>
+      </div>
+
     </section>
 
   </div>
