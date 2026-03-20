@@ -107,17 +107,17 @@ function saveCharge() {
     return;
   }
 
-  const kmRaw = parseFloat(document.getElementById('chargeKm').value);
-  const km    = kmRaw > 0 ? kmRaw : null;
+  const odoRaw  = parseFloat(document.getElementById('chargeOdometer').value);
+  const odometer = odoRaw > 0 ? Math.round(odoRaw) : null;
 
   const record = {
-    id:   Date.now(),
+    id: Date.now(),
     date: dateVal,
     start,
     end,
     diff,
     kwh,
-    km,
+    odometer,
     note: document.getElementById('chargeNote').value.trim()
   };
 
@@ -125,10 +125,12 @@ function saveCharge() {
   charges.unshift(record);
   saveCharges(charges);
 
-  const effStr = km ? `  ·  ${(kwh / km * 100).toFixed(1)} kWh/100km` : '';
+  // Driven km = current odometer - previous odometer (if both exist)
+  const driven = calcDrivenKm(charges, 0);
+  const effStr = driven ? `  ·  ${(kwh / driven * 100).toFixed(1)} kWh/100km` : '';
   showToast(`${kwh} kWh kaydedildi!${effStr}`, 'success');
-  document.getElementById('chargeNote').value = '';
-  document.getElementById('chargeKm').value   = '';
+  document.getElementById('chargeNote').value     = '';
+  document.getElementById('chargeOdometer').value = '';
   initDate();
 }
 
@@ -145,10 +147,16 @@ function renderHistory() {
   }
 
   empty.style.display = 'none';
-  list.innerHTML = charges.map(c => {
-    const effRow = c.km
-      ? `<p class="history-efficiency">🛣 ${c.km.toLocaleString('tr-TR')} km &nbsp;·&nbsp; ${(c.kwh / c.km * 100).toFixed(1)} kWh/100km</p>`
-      : '';
+  list.innerHTML = charges.map((c, i) => {
+    let effRow = '';
+    if (c.odometer) {
+      const driven = calcDrivenKm(charges, i);
+      if (driven) {
+        const eff = (c.kwh / driven * 100).toFixed(1);
+        effRow += `<p class="history-efficiency">🛣 ${driven.toLocaleString('tr-TR')} km &nbsp;·&nbsp; ${eff} kWh/100km</p>`;
+      }
+      effRow += `<p class="history-odometer">📍 ${c.odometer.toLocaleString('tr-TR')} km</p>`;
+    }
     return `
     <div class="history-item" id="item-${c.id}">
       <div class="history-top">
@@ -216,14 +224,18 @@ function renderStats() {
   document.getElementById('statMonthKwh').textContent  = monthKwh.toFixed(1) + ' kWh';
   document.getElementById('statMonthCount').textContent = thisMonth.length;
 
-  // Verimlilik (sadece km girilmiş kayıtlardan)
-  const withKm = charges.filter(c => c.km && c.km > 0);
+  // Verimlilik (odometer farkından hesaplanır)
   const effCard = document.getElementById('efficiencyCard');
-  if (withKm.length > 0) {
-    const avgEff = withKm.reduce((s, c) => s + (c.kwh / c.km * 100), 0) / withKm.length;
+  let totalKwhCalc = 0, totalDrivenCalc = 0, pairCount = 0;
+  charges.forEach((c, i) => {
+    const driven = calcDrivenKm(charges, i);
+    if (driven) { totalKwhCalc += c.kwh; totalDrivenCalc += driven; pairCount++; }
+  });
+  if (totalDrivenCalc > 0) {
+    const avgEff = totalKwhCalc / totalDrivenCalc * 100;
     document.getElementById('statEfficiency').textContent = avgEff.toFixed(1);
     document.getElementById('statEfficiencySub').textContent =
-      `${withKm.length} kayıttan hesaplandı (km girilmiş seanslara göre)`;
+      `${pairCount} seanstan hesaplandı · toplam ${totalDrivenCalc.toLocaleString('tr-TR')} km`;
     effCard.style.display = '';
   } else {
     effCard.style.display = 'none';
@@ -238,6 +250,21 @@ function renderStats() {
       yaklaşık <strong>${Number(estimatedKm).toLocaleString('tr-TR')} km</strong> yol gidebilirdiniz.
     </p>
   `;
+}
+
+// ── Odometer yardımcısı ────────────────────────
+// charges dizisi en yeni-başta sıralı. charges[index]'in odometer'ından
+// bir önceki (daha eski) odometer'ı çıkararak gidilen km'yi hesaplar.
+function calcDrivenKm(charges, index) {
+  const c = charges[index];
+  if (!c.odometer) return null;
+  for (let i = index + 1; i < charges.length; i++) {
+    if (charges[i].odometer) {
+      const driven = c.odometer - charges[i].odometer;
+      return driven > 0 ? driven : null;
+    }
+  }
+  return null;
 }
 
 // ── localStorage ───────────────────────────────
